@@ -286,7 +286,7 @@ y_ref[T]=y_target
 ubar,theta=synthesis_program(M,N,e,e_bar,E,y_ref,u_ref,Q,R)
 pi_program=np.hstack([ubar[t] for t in range(T)]+[theta[t] for t in range(T)])
 
-ubar,theta=extract_policy_simple(pi_new,T,m,o)
+ubar,theta=extract_policy_simple(pi_program,T,m,o)
 
 #def simulate_my_controller(sys,x_0,T,A,B,C):
 fS=open("data/%s/S.pkl"%f,"rb")

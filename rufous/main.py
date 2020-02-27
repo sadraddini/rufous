@@ -149,7 +149,7 @@ def test_prediction(y,u,M,N,e_bar,color='red'):
         print(t,"-error is",total_error[t])
     plt.plot([t for t in range(T)],[total_error[t] for t in range(T)],color=color)
     
-n,o,m,T=10,100,1,5
+n,o,m,T=10,2,1,5
 N_data=500
 N_train=400
 N_test=N_data-N_train

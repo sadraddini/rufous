@@ -1,2 +1,8 @@
 
 *.pkl
+
+rufous/examples/images/
+
+*.png
+
+*.jpg

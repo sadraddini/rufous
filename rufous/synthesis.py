@@ -1,22 +1,12 @@
-w#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jan 20 19:20:10 2020
+Created on Tue Jan 21 18:14:11 2020
 
 @author: sadra
 """
-
 import numpy as np
-import pickle
-
-my_file=open("data/%s/system.pkl"%f,"rb")
-(M,N,e_bar,e,E)=pickle.load(my_file)
-T=len(N)
-o,m=N[0].shape
-N_data=e[0].shape[1]
-
 import time
-
 
 def LME(list_of_AB,C):
     assert list_of_AB[0][0].shape==(1,1)
@@ -28,31 +18,18 @@ def LME(list_of_AB,C):
         A=A+f.T*e[0,0]
     print("sum=",time.time()-start_time)
     start_time=time.time()
-    X=np.linalg.solve(A, C.T)
+    try:
+        X=np.linalg.solve(A, C.T)
+    except:
+        print("WARNING: SINGULAR MATRIX")
+        X,res,rank,singulars=np.linalg.lstsq(A,C.T)
+        print(res,rank)
     print("solve=",time.time()-start_time)
     return X
 
-def LME_greedy(list_of_AB,C):
-    A,B=list_of_AB[0]
-    X=np.random.random((A.shape[1],B.shape[0]))*10
-    for t in range(100):
-        h=np.random.random()
-        D=np.random.random((A.shape[1],B.shape[0]))*h
-        print("iteration",t)
-        JX=np.linalg.norm(sum([np.linalg.multi_dot([e,X,f]) for (e,f) in list_of_AB])-C)
-        JXD=np.linalg.norm(sum([np.linalg.multi_dot([e,X+D,f]) for (e,f) in list_of_AB])-C)
-        print("JX",JX/np.sqrt(C.shape[0]*C.shape[1]),"JXD",JXD/np.sqrt(C.shape[0]*C.shape[1]))
-        if JX>=JXD:
-            X=X+D
-        else:
-            X=X-D
-    return X
-    
-    
-        
-
-def opeflqr(M,N,y_ref,u_ref,Q,R,zeta,sigma):
+def opeflqr(M,N,y_ref,u_ref,Q,R,zeta,sigma,T):
     # I and Gamma
+    o,m=N[0].shape
     I,Gamma={},{}
     for t in range(T+1):
         I[t]=np.zeros((o,o*(T+1)))
@@ -146,27 +123,3 @@ def opeflqr(M,N,y_ref,u_ref,Q,R,zeta,sigma):
         k+=o*(t+1)
     print("extraction=",time.time()-start_time)
     return pi,ubar,theta
-
-
-my_file=open("data/%s/system.pkl"%f,"rb")
-(M,N,e_bar,e,E)=pickle.load(my_file)
-T=len(N)
-o,m=N[0].shape
-N_data=e[0].shape[1]
-
-zeta=np.mean(E[T],1).reshape(o*(T+1),1)
-sigma=np.dot(E[T],E[T].T)
-
-y_target=np.ones((o,1))*15
-R,Q,y_ref,u_ref={},{},{},{}
-for t in range(T):
-    y_ref[t]=np.zeros((o,1))
-    u_ref[t]=np.zeros((m,1))
-    R[t]=np.eye(m)*1
-    Q[t]=np.eye(o)*1
-Q[T]=np.eye(o)*100
-y_ref[T]=y_target
-
-start_time=time.time()
-pi_ope,ubar,theta=opeflqr(M,N,y_ref,u_ref,Q,R,zeta,sigma)
-print(time.time()-start_time)
