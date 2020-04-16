@@ -149,7 +149,7 @@ def test_prediction(y,u,M,N,e_bar,color='red'):
         print(t,"-error is",total_error[t])
     plt.plot([t for t in range(T)],[total_error[t] for t in range(T)],color=color)
     
-n,o,m,T=10,2,1,5
+n,o,m,T=5,1,1,10
 N_data=500
 N_train=400
 N_test=N_data-N_train
@@ -159,15 +159,16 @@ y_test={i-N_train:y[i] for i in range(N_train,N_data)}
 u_train={i:u[i] for i in range(N_train)}
 u_test={i-N_train:u[i] for i in range(N_train,N_data)}
 start_time=time.time()
-M,N,e_bar,e=learn_model(y_train,u_train,w_reg=10**-1)
-print(time.time()-start_time)
-start_time=time.time()
-M2,N2,e_bar2,e,E=model_least_squares(y_train,u_train,w_M=10**-1,w_N=10**-5)
-print(time.time()-start_time)
-# Training Error
-test_prediction(y_train,u_train,M,N,e_bar,'red')
-test_prediction(y_train,u_train,M2,N2,e_bar2,'orange')
-# Test Error
-test_prediction(y_test,u_test,M,N,e_bar,'blue')
-test_prediction(y_test,u_test,M2,N2,e_bar2,'cyan')
+for my_reg in [-3,-2,-1,0,1,2,3]:
+    M,N,e_bar,e=learn_model(y_train,u_train,w_reg=10**my_reg)
+    print(time.time()-start_time)
+    start_time=time.time()
+#    M2,N2,e_bar2,e,E=model_least_squares(y_train,u_train,w_M=10**-1,w_N=10**-5)
+    print(time.time()-start_time)
+    # Training Error
+    test_prediction(y_train,u_train,M,N,e_bar,color=(1,0.5-my_reg/6,0.5-my_reg/6))
+    #test_prediction(y_train,u_train,M2,N2,e_bar2,'orange')
+    # Test Error
+    test_prediction(y_test,u_test,M,N,e_bar,color=(0.5-my_reg/6,0.5-my_reg/6,1))
+    #test_prediction(y_test,u_test,M2,N2,e_bar2,'cyan')
 

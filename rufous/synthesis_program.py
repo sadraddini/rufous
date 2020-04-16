@@ -18,3 +18,6 @@ try:
 except:
     print("Error in loading Drake Mathematical Program")
 
+prog = MathematicalProgram()
+phi = prog.NewContinuousVariables(2)
+prog.AddConstraint(x[0]**2 + x[1]**2 <= 1)

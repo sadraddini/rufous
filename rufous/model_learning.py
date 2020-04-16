@@ -16,11 +16,12 @@ class ARX_model:
         self.e_bar=e_bar
         self.zeta=zeta
         self._build()
+        self.y_ref=None
         
     def _build(self):
         self.T=max(self.M.keys())
         assert self.T==max(self.N.keys())
-        self.o,self.m=self.M[0].shape[0],self.N[0].shape[0]
+        self.o,self.m=self.M[0].shape[0],self.N[0].shape[1]
         self.T_windows={}
         for t in range(self.T+1):
             # T_windows is the number of outputs in the past (including current) that is used for prediction 

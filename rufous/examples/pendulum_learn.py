@@ -11,23 +11,26 @@ import pickle
 from PIL import Image,ImageOps
 #from ..model_learning import model_least_squares,learn_model
 
-my_dpi=18
+my_dpi=11
 f=open("training_data_%d.pkl"%my_dpi,"rb")
 x,y,u=pickle.load(f)
 
 f_test=open("training_test_%d.pkl"%my_dpi,"rb")
 x_test,y_test,u_test=pickle.load(f_test)
 
-S=model_least_squares(y,u,w_M=20000*10**-2,w_N=20000*10**-2,T_window={t:4 for t in range(10)})
+S=model_least_squares(y,u,w_M=20000*10**-4,w_N=20000*10**-4,T_window={t:8 for t in range(10)})
 #M2,N2,e_bar2,e2=learn_model(y,u,w_reg=10**-1)
 test_prediction(y_test,u_test,S,color='red')
 test_prediction(y,u,S,color='blue')
 #test_prediction(y_test,u_test,M2,N2,e_bar2,color='orange')
 #test_prediction(y,u,M2,N2,e_bar2,color='cyan')
 
-raise 1
 
-if True:
+M=S.M
+N=S.N
+e_bar=S.e_bar
+
+if False:
     n=7
     t=3
     y_current=np.vstack([y_test[n][tau] for tau in range(t+1)])
@@ -58,7 +61,7 @@ if True:
     error_image.save("error.png")
 
 # Multi-step Prediction    
-if True:
+if False:
     n=7
     t=1
     T_prediction=7
@@ -84,20 +87,20 @@ if True:
         actual_image=actual_image.resize((my_dpi*50,my_dpi*50))
         actual_image.save("multi_actual_%d.png"%k)
         
-
-a,b={},{}  
-for n in range(20):
-    for t in range(7):
-        y_current=np.vstack([y_test[n][tau] for tau in range(t+1)])
-        u_current=np.vstack([np.array(u_test[n][tau])  for tau in range(t+1)]) 
-        y_prediction_t=e_bar[t]+np.dot(M[t],y_current)+np.dot(N[t],u_current)
-        error=np.linalg.norm(y_prediction_t-y_test[n][t+1],2)
-        error_previous=np.linalg.norm(y_prediction_t-y_test[n][t],2)
-        error_next=np.linalg.norm(y_prediction_t-y_test[n][t+2],2)
-        a[n,t]=error_next/error
-        b[n,t]=error_previous/error
-aa=np.array(list(a.values()))
-bb=np.array(list(b.values()))
+if False:
+    a,b={},{}  
+    for n in range(20):
+        for t in range(7):
+            y_current=np.vstack([y_test[n][tau] for tau in range(t+1)])
+            u_current=np.vstack([np.array(u_test[n][tau])  for tau in range(t+1)]) 
+            y_prediction_t=e_bar[t]+np.dot(M[t],y_current)+np.dot(N[t],u_current)
+            error=np.linalg.norm(y_prediction_t-y_test[n][t+1],2)
+            error_previous=np.linalg.norm(y_prediction_t-y_test[n][t],2)
+            error_next=np.linalg.norm(y_prediction_t-y_test[n][t+2],2)
+            a[n,t]=error_next/error
+            b[n,t]=error_previous/error
+    aa=np.array(list(a.values()))
+    bb=np.array(list(b.values()))
 
 
 
@@ -118,7 +121,7 @@ def image_pendulum(theta,t=0):
     plt.axis('off')
     ax.set_xlim([-0.8,0.8])
     ax.set_ylim([-0.2,1.5])
-    s="images/a_test_pendulum_%d.png"%t
+    s="a_test_pendulum_%d.png"%t
     fig.savefig(s,dpi=my_dpi)
     a=Image.open(s)
     a=ImageOps.grayscale(a)
@@ -126,17 +129,19 @@ def image_pendulum(theta,t=0):
     fig.clf()
     return b
 
-raise 1
 
 
 T=5
 o=my_dpi**2
 m=1
-zeta=np.mean(E[T],1).reshape(o*(T+1),1)
-sigma=np.dot(E[T],E[T].T)
+ET=np.vstack([S.zeta[t] for t in range(T+1)])
+
+zeta=np.mean(ET,1).reshape(o*(T+1),1)
+sigma=np.dot(ET,ET.T)
 y_target=image_pendulum(0,0).reshape(my_dpi**2,1)
 
-y0=np.mean(E[0],1).reshape(o,1)
+
+y0=np.mean(S.zeta[0],1).reshape(o,1)
 R,Q,y_ref,u_ref={},{},{},{}
 for t in range(T):
     y_ref[t]=y_target
@@ -146,19 +151,26 @@ for t in range(T):
 Q[T]=np.eye(o)*T
 y_ref[T]=y_target
 
+S.y_ref=y_ref
+
+f=open("my_system_%d.pkl"%my_dpi,"wb")
+pickle.dump(S,f)
+
+#raise 1
+
 goal_image=Image.fromarray(y_target.reshape(my_dpi,my_dpi))
 goal_image=goal_image.convert("RGB")
 goal_image=goal_image.resize((my_dpi*50,my_dpi*50))
 goal_image.save("goal.png")
 
 
-
+#raise 1
 pi,ubar,theta=opeflqr(M,N,y_ref,u_ref,Q,R,zeta,sigma,T)
 
 if True:
     for t in range(T):
         theta_adjusted=np.abs(theta[t][:,theta[t].shape[1]-my_dpi**2:])/np.max((np.abs(theta[t][:,theta[t].shape[1]-my_dpi**2:])))*256
-        u_adjusted=np.multiply(np.mean(e[t],1).reshape(o,1),theta_adjusted.T)
+        u_adjusted=np.multiply(np.mean(S.zeta[t+1],1).reshape(o,1),theta_adjusted.T)
         u_adjusted= np.abs(u_adjusted)/np.max(np.abs(u_adjusted))*256
         K_image=Image.fromarray(u_adjusted.reshape(my_dpi,my_dpi))
         K_image=K_image.convert('L')
@@ -168,10 +180,14 @@ if True:
 # Now a run of the system
 import matplotlib.pyplot as plt
 
+M=S.M
+N=S.N
+e_bar=S.e_bar
+
 dt=0.2
 g=10
 
-N_simulate=150
+N_simulate=40
 x_final={}
 x_run={}
 for j in range(N_simulate):

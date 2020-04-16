@@ -95,7 +95,7 @@ def synthesis_program(M,N,e,e_bar,E,y_ref,u_ref,Q,R):
     
 #clock=214
 #f=str(clock)    
-my_file=open("data/%s/system.pkl"%f,"rb")
+my_file=open("data/%s/system2.pkl"%f,"rb")
 (M,N,e_bar,e,E)=pickle.load(my_file)
 T=len(N)
 o,m=N[0].shape
@@ -269,7 +269,7 @@ print("Now doing Synthesis")
 #Su_final=np.dot(Su,I_u)
 
 
-y_target=np.ones((o,1))*15
+y_target=np.ones((o,1))*0
 ubar,theta,phi,alpha,J=synthesis_LS(y_target,M,N,e,e_bar,E,L_reg=10**0)
 pi_regular=np.hstack([ubar[t] for t in range(T)]+[theta[t] for t in range(T)])
 
@@ -294,6 +294,7 @@ fS=open("data/%s/S.pkl"%f,"rb")
 n=A.shape[0]
 N_test=100
 delta=np.empty(N_test)
+y_all={}
 for i in range(N_test):
     x,u,v,w,y={},{},{},{},{}
     U,Y,xi,e_sim={},{},{},{}
@@ -318,6 +319,7 @@ for i in range(N_test):
         U[t]=np.vstack([u[tau] for tau in range(t+1)])
         e_sim[t]=y[t+1]-np.dot(M[t],Y[t])-np.dot(N[t],U[t])
         xi[t+1]=np.vstack([y[0]]+[e_sim[tau] for tau in range(t+1)])
+        y_all[i]=y
         
     phiT=phi["bar",T]+sum([np.dot(alpha[tau,T],np.dot(theta[tau],J[tau])) for tau in range(T)])
     y_bar=sum([np.dot(alpha[tau,T],ubar[tau]) for tau in range(T)])
@@ -327,3 +329,10 @@ for i in range(N_test):
     delta[i]=np.linalg.norm(y[T]-y_target,2)
 
 print(np.mean(delta))
+for i in range(N_test):
+    plt.plot([y_all[i][t][0,0] for t in range(T)],color='blue')
+    plt.xlabel('Time')
+    plt.ylabel('y')
+    plt.title('Output Regularization')
+
+plt.plot([[y_all[i][t][0,0] for t in range(T+1)] for i in range(N_test)])
